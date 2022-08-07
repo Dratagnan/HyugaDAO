@@ -25,7 +25,8 @@
     "merkletreejs": "^0.2.32",
     "next": "12.2.4",
     "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "react-dom": "18.2.0",
+    "minimist": "1.2.6"
   },
   "devDependencies": {
     "eslint": "8.21.0",
