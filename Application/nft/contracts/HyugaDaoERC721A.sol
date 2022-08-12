@@ -150,7 +150,41 @@ contract HyugaDaoERC721A is Ownable, ERC721A, ERC721AQueryable, PaymentSplitter 
       merkleRoot = _merkleRoot;
    }
 
+   /** 
+   * @notice hash an address
+   * 
+   * @param _account the adress to be hashed
+   * 
+   * @return bytes32 the hashed address
+   */
+
    function leaf(address _account) internal pure returns(bytes32) {
-      
+      return keccak256(abi.encodePacked(_account));
+   }
+
+   /** 
+   * @notice return true if a leaf can be proved to be a part of a merkle tree definer by root
+   * 
+   * @param _leaf the leaf
+   * @param _proof the merkle proof
+   * 
+   * @return True if a leaf can be proven to be a part of a merkle
+   */
+
+   function _verify(bytes32 _leaf, bytes32[] memory _proof) internal view returns(bool) {
+      return MerkleProof.verify(_proof, merkleRoot, _leaf);
+   }
+
+   /** 
+   * @notice check if an address is whitelisted or not
+   * 
+   * @param _account the account checked
+   * @param _proof the merkle proof
+   * 
+   * @return bool return true if the address is whitelisted of fals if not
+   */
+
+   function isWhitelisted(address _account, bytes32[] calldata _proof) internal view returns(bool) {
+      return _verify(leaf(_account), _proof);
    }
 }
