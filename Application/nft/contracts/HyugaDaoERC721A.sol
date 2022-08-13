@@ -85,14 +85,14 @@ contract HyugaDaoERC721A is Ownable, ERC721A, ERC721AQueryable, PaymentSplitter 
    */
 
    function whitelistMint(address _account, uint _quantity, bytes32[] calldata _proof) external payable callerIsUser{
-      require(!isPaused, "contract is paused");
-      require(currentTime() >= saleStartTime, "sale has not yet started");
-      require(currentTime() < saleStartTime + 12 hours, "sale is finished");
+      require(!isPaused, "Contract is paused");
+      require(currentTime() >= saleStartTime, "Sale has not yet started");
+      require(currentTime() < saleStartTime + 12 hours, "Sale is finished");
       uint price = wlSalePrice;
-      require(price != 0, "price is 0");
-      require(sellingStep == Step.WhitelistSale, "whitelist sale is not yet started");
-      require(isWhitelisted(msg.sender, _proof), "not whitelistes");
-      require(amountNFTperWalletWhitelistSale[msg.sender] + _quantity <= maxPerAddressDuringWhitelistMint, "you can only mint one nft during the wl sale");
+      require(price != 0, "Price is 0");
+      require(sellingStep == Step.WhitelistSale, "Whitelist sale is not yet started");
+      require(isWhitelisted(msg.sender, _proof), "Not whitelisted");
+      require(amountNFTperWalletWhitelistSale[msg.sender] + _quantity <= maxPerAddressDuringWhitelistMint, "You can only mint one nft during the wl sale");
       require(totalSupply() + _quantity <= MAX_WHITELIST, "Max supply exceeded");
       require(msg.value >= price * _quantity, "Not enough gas");
       amountNFTperWalletWhitelistSale[msg.sender] += _quantity; 
@@ -265,7 +265,7 @@ contract HyugaDaoERC721A is Ownable, ERC721A, ERC721AQueryable, PaymentSplitter 
       return _verify(leaf(_account), _proof);
    }
 
-   function releadeAll() external {
+   function releaseAll() external {
       for(uint i = 0 ; i > teamLength ; i++) {
          release(payable(payee(i)));
       }
