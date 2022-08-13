@@ -22,7 +22,7 @@ contract HyugaDaoERC721A is Ownable, ERC721A, ERC721AQueryable, PaymentSplitter 
       Reveal
    }
 
-   Step public settingStep;
+   Step public sellingStep;
    
    uint private constant MAX_SUPPLY = 100;
    uint private constant MAX_GIFT = 5;
@@ -68,6 +68,83 @@ contract HyugaDaoERC721A is Ownable, ERC721A, ERC721AQueryable, PaymentSplitter 
       merkleRoot = _merkleRoot;
       baseURI = _baseURI;
       teamLength = _team.length;
+   }
+
+   /**
+    * @notice this contract can't be called by other contract
+    */
+
+   modifier callerIsUser() {
+      require(tx.origin == msg.sender, "The caller is another contract");
+      _;
+   }
+
+   /**
+   * @notice mint function for the public sale
+   *
+   */
+
+   function whitelistMint(address _account, uint _quantity, bytes32[] calldata _proof) external payable callerIsUser{
+      require(!isPaused, "contract is paused");
+      require(currentTime() >= saleStartTime, "sale has not yet started");
+      require(currentTime() < saleStartTime + 12 hours, "sale is finished");
+      uint price = wlSalePrice;
+      require(price != 0, "price is 0");
+      require(sellingStep == Step.WhitelistSale, "whitelist sale is not yet started");
+      require(isWhitelisted(msg.sender, _proof), "not whitelistes");
+      require(amountNFTperWalletWhitelistSale[msg.sender] + _quantity <= maxPerAddressDuringWhitelistMint, "you can only mint one nft during the wl sale");
+      require(totalSupply() + _quantity <= MAX_WHITELIST, "Max supply exceeded");
+      require(msg.value >= price * _quantity, "Not enough gas");
+      amountNFTperWalletWhitelistSale[msg.sender] += _quantity; 
+      _safeMint(_account, _quantity);
+   }
+
+   /**
+    * @notice mint function for the public sale
+    * 
+    * @param _account the account wich will receive the nft
+    * @param _quantity the amount nft that user want to mint 
+    */
+
+   function publicMint(address _account, uint _quantity) external payable callerIsUser {
+      require(!isPaused, "Mint is paused");
+      require(currentTime() >= saleStartTime + 24 hours, "Public sale has not started yet");
+      require(currentTime() <= saleStartTime + 48 hours, "Public sale is finished");
+      uint price = publicSalePrice;
+      require(price != 0, "Price is 0");
+      require(sellingStep == Step.PublicSale, "Public sale is not activated yet");
+      require(amountNFTperWalletPublicSale[msg.sender] + _quantity <= maxPerAddressDuringPublicMint, "You can only get 3 nft");
+      require(totalSupply() + _quantity <= MAX_SUPPLY_MINUS_GIFT, "Max supply exceeded");
+      require(msg.value >= price * _quantity, "Not enought funds");
+      amountNFTperWalletPublicSale[msg.sender] += _quantity;
+      _safeMint(_account, _quantity);
+   }
+
+   /**
+    * @notice allow the owner to gift nft
+    * 
+    * @param _to address of the receiver
+    * @param _quantity amount of nft that the owner want to gift
+    */
+
+   function gift(address _to, uint _quantity) external onlyOwner {
+      require(sellingStep > Step.PublicSale, "gift is after the public sale");
+      require(totalSupply() + _quantity <= MAX_SUPPLY, "reached max supply");
+      _safeMint(_to, _quantity);
+   }
+
+   /**
+   * @notice get the token URI of an nft by his ID
+   *
+   * @param _tokenId the ID of the nft you want to have the URI of the metadata 
+   * 
+   * @return the token URI of the nft by his ID
+   */
+
+   function tokenURI(uint _tokenId) public view virtual override(ERC721A, IERC721A) returns (string memory) {
+      require(_exists(_tokenId), "URI query for nonnexistent token");
+   
+      return string(abi.encodePacked(baseURI, _tokenId.toString(), ".json"));
    }
 
    /** 
@@ -117,7 +194,7 @@ contract HyugaDaoERC721A is Ownable, ERC721A, ERC721AQueryable, PaymentSplitter 
    */
 
    function setStep(uint _step) external onlyOwner {
-      settingStep = Step(_step);
+      sellingStep = Step(_step);
    }
 
          /** 
@@ -141,7 +218,7 @@ contract HyugaDaoERC721A is Ownable, ERC721A, ERC721AQueryable, PaymentSplitter 
    }
 
          /** 
-   * @notice change the merkle root  of the sale
+   * @notice change the merkle root of the sale
    * 
    * @param _merkleRoot is the new merkle root 
    */
@@ -187,4 +264,27 @@ contract HyugaDaoERC721A is Ownable, ERC721A, ERC721AQueryable, PaymentSplitter 
    function isWhitelisted(address _account, bytes32[] calldata _proof) internal view returns(bool) {
       return _verify(leaf(_account), _proof);
    }
+
+   function releadeAll() external {
+      for(uint i = 0 ; i > teamLength ; i++) {
+         release(payable(payee(i)));
+      }
+   }
+
+   // Not allowing receiving ethers outside minting functions 
+   receive () override external payable {
+      revert("only if you mint");
+   }
+
+
+
+
+
+
+
+
+
+
+
+
 }

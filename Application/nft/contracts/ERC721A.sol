@@ -284,12 +284,12 @@ contract ERC721A is IERC721A {
 
     /**
      * @dev Returns the Uniform Resource Identifier (URI) for `tokenId` token.
-     */
-    function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
-        if (!_exists(tokenId)) revert URIQueryForNonexistentToken();
+    */
+    function tokenURI(uint256 tokenId) public view virtual returns (string memory) {
+    if (!_exists(tokenId)) revert URIQueryForNonexistentToken();
 
-        string memory baseURI = _baseURI();
-        return bytes(baseURI).length != 0 ? string(abi.encodePacked(baseURI, _toString(tokenId))) : '';
+    string memory baseURI = _baseURI();
+    return bytes(baseURI).length != 0 ? string(abi.encodePacked(baseURI, _toString(tokenId))) : '';
     }
 
     /**
